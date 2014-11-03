@@ -64,19 +64,27 @@
                                                          .AddEdge("Dam Lobby", "Maintenance Room", "East")
                                                          .AddEdge("Dam Lobby", "Maintenance Room", "North");
 
-         foreach (var path in map.AllPathsFrom("Troll Room"))
-         {
-            Console.WriteLine("All paths: " +
-                              path.Aggregate(string.Empty, (existing, newPath) => existing + " -> " + newPath.Key + " " + newPath.Value + ")")
-                                  .TrimStart(' ', '-', '>'));
-            Console.WriteLine();
-         }
+         ////Console.WriteLine("All paths (" + map.AllPathsFrom("Troll Room").Count() + "):" + Environment.NewLine);
+
+         ////foreach (var path in map.AllPathsFrom("Troll Room"))
+         ////{
+         ////   foreach (var edge in path)
+         ////   {
+         ////      Console.WriteLine(edge.Key + " (@ " + edge.Value + ")");
+         ////   }
+
+         ////   Console.WriteLine();
+         ////}
+
+         Console.WriteLine(Environment.NewLine + "Found paths (" + map.FindPaths("Troll Room", "Maintenance Room").Count() + "):" + Environment.NewLine);
 
          foreach (var path in map.FindPaths("Troll Room", "Maintenance Room"))
          {
-            Console.WriteLine("Found paths: " +
-                              path.Aggregate(string.Empty, (existing, newPath) => existing + " -> " + newPath.Key + " (" + newPath.Value + ")")
-                                  .TrimStart(' ', '-', '>'));
+            foreach (var edge in path)
+            {
+               Console.WriteLine(edge.Key + " (@ " + edge.Value + ")");
+            }
+
             Console.WriteLine();
          }
       }

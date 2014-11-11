@@ -102,34 +102,7 @@
          // take candidate nodes from first traversal, benefit: they are already ordered by distance
          var candidateNodes = allTraversals.First().Select(edge => edge.Value);
 
-         // return the first candidate that is contained in all traversals
-         return candidateNodes.FirstOrDefault(candidateNode => allTraversals.All(traversal => traversal.Any(edge => edge.Value.Equals(candidateNode))));
-      }
-
-      /// <summary>
-      /// Calculates the closes inevitable node of a given node using some optimizations
-      /// </summary>
-      /// <typeparam name="TEdge">The type of the edge.</typeparam>
-      /// <typeparam name="TNode">The type of the node.</typeparam>
-      /// <param name="graph">The graph.</param>
-      /// <param name="nodeToCheck">The node to check.</param>
-      /// <returns>
-      /// The closes inevitable node from the given node.
-      /// </returns>
-      public static TNode ClosesInevitableNodeOptimized<TEdge, TNode>(this ImmutableDirectedGraph<TNode, TEdge> graph, TNode nodeToCheck)
-      {
-         var allTraversals = graph.AllEdgeTraversals(nodeToCheck).ToList();
-
-         // take candidate nodes from first traversal, benefit: they are already ordered by distance
-
-         // optimization: filter for nodes with <= 1 outgoing edges
-         // another optimzation would be to also filter for nodes with >= #edges(nodeToCheck) incoming edges,
-         // but unfortunately this is not easily supported by our graph structure
-         var candidateNodes = allTraversals.First().Select(edge => edge.Value).Where(node => graph.Edges(node).Count <= 1);
-
-         // return the first candidate that is contained in all traversals
-         
-         // optimization: after the first one
+         // return the first candidate that is contained in all other traversals
          return candidateNodes.FirstOrDefault(candidateNode => allTraversals.Skip(1).All(traversal => traversal.Any(edge => edge.Value.Equals(candidateNode))));
       }
 

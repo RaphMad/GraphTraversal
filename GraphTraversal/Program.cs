@@ -146,9 +146,9 @@
       /// </summary>
       private static void Inevitable()
       {
-         const string NodeToCheck = "Round Room";
+         const string NodeToCheck = "Loud Room";
 
-         Console.WriteLine("Inevitable node of " + NodeToCheck + " is: " + _map.ClosesInevitableNodeOptimized(NodeToCheck));
+         Console.WriteLine("Inevitable node of " + NodeToCheck + " is: " + _map.ClosesInevitableNode(NodeToCheck));
       }
    }
 }

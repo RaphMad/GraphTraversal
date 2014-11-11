@@ -57,10 +57,6 @@
          return AllEdgeTraversals(start, graph.Edges);
       }
 
-      private static int _counter;
-
-      private static int _otherCounter;
-
       /// <summary>
       /// Calculates all edge traversals based on the given Edge function.
       /// </summary>
@@ -77,8 +73,6 @@
 
          if (edges.Count == 0)
          {
-            Console.WriteLine("calc: " + ++_counter);
-            Console.WriteLine("calcOther: " + ++_otherCounter);
             yield return ImmutableStack<KeyValuePair<TEdge, TNode>>.Empty;
          }
          else
@@ -86,7 +80,6 @@
             foreach (var pair in edges)
                foreach (var path in AllEdgeTraversals(pair.Value, getEdges))
                {
-                  Console.WriteLine("calcOther: " + ++_otherCounter);
                   yield return path.Push(pair);
                }
          }

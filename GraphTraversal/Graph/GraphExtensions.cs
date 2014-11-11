@@ -1,6 +1,8 @@
 ﻿namespace GraphTraversal
 {
+   using System;
    using System.Collections.Generic;
+   using System.Collections.Immutable;
    using System.Linq;
 
    /// <summary>
@@ -11,10 +13,10 @@
       /// <summary>
       /// Finds all paths from the "start" node to the "end" node.
       /// </summary>
-      public static IEnumerable<IEnumerable<KeyValuePair<TEdges, TNodes>>> FindPaths<TNodes, TEdges>(
-         this ImmutableDirectedGraph<TNodes, TEdges> graph,
-         TNodes start,
-         TNodes finish)
+      public static IEnumerable<IEnumerable<KeyValuePair<TEdge, TNode>>> FindPaths<TNode, TEdge>(
+         this ImmutableDirectedGraph<TNode, TEdge> graph,
+         TNode start,
+         TNode finish)
       {
          // enumerate all paths starting at node "start", filter for the ones ending at node "finish"
          return graph.AllPathsFrom(start)
@@ -24,9 +26,9 @@
       /// <summary>
       /// Finds all paths starting at the "start" node.
       /// </summary>
-      public static IEnumerable<IEnumerable<KeyValuePair<TEdges, TNodes>>> AllPathsFrom<TNodes, TEdges>(
-         this ImmutableDirectedGraph<TNodes, TEdges> graph,
-         TNodes start)
+      public static IEnumerable<IEnumerable<KeyValuePair<TEdge, TNode>>> AllPathsFrom<TNode, TEdge>(
+         this ImmutableDirectedGraph<TNode, TEdge> graph,
+         TNode start)
       {
          // for each outgoing edge from "start"...
          foreach (var edge in graph.Edges(start))
@@ -38,6 +40,101 @@
             foreach (var path in graph.AllPathsFrom(edge.Value))
                yield return path.Prepend(edge);
          }
+      }
+
+      /// <summary>
+      /// Calculates all edge traversals of the given graph.
+      /// </summary>
+      /// <typeparam name="TEdge">The type of the edge.</typeparam>
+      /// <typeparam name="TNode">The type of the node.</typeparam>
+      /// <param name="graph">The graph.</param>
+      /// <param name="start">The start node.</param>
+      /// <returns>All found edge traversals.</returns>
+      public static IEnumerable<ImmutableStack<KeyValuePair<TEdge, TNode>>> AllEdgeTraversals<TEdge, TNode>(
+         this ImmutableDirectedGraph<TNode, TEdge> graph,
+         TNode start)
+      {
+         return AllEdgeTraversals(start, graph.Edges);
+      }
+
+      private static int _counter;
+
+      private static int _otherCounter;
+
+      /// <summary>
+      /// Calculates all edge traversals based on the given Edge function.
+      /// </summary>
+      /// <typeparam name="TEdge">The type of the edge.</typeparam>
+      /// <typeparam name="TNode">The type of the node.</typeparam>
+      /// <param name="start">The start.</param>
+      /// <param name="getEdges">The edge function.</param>
+      /// <returns>All found edge traversals.</returns>
+      public static IEnumerable<ImmutableStack<KeyValuePair<TEdge, TNode>>> AllEdgeTraversals<TEdge, TNode>(
+         TNode start,
+         Func<TNode, IReadOnlyDictionary<TEdge, TNode>> getEdges)
+      {
+         var edges = getEdges(start);
+
+         if (edges.Count == 0)
+         {
+            Console.WriteLine("calc: " + ++_counter);
+            Console.WriteLine("calcOther: " + ++_otherCounter);
+            yield return ImmutableStack<KeyValuePair<TEdge, TNode>>.Empty;
+         }
+         else
+         {
+            foreach (var pair in edges)
+               foreach (var path in AllEdgeTraversals(pair.Value, getEdges))
+               {
+                  Console.WriteLine("calcOther: " + ++_otherCounter);
+                  yield return path.Push(pair);
+               }
+         }
+      }
+
+      /// <summary>
+      /// Calculates the closes inevitable node of a given node.
+      /// </summary>
+      /// <typeparam name="TEdge">The type of the edge.</typeparam>
+      /// <typeparam name="TNode">The type of the node.</typeparam>
+      /// <param name="graph">The graph.</param>
+      /// <param name="nodeToCheck">The node to check.</param>
+      /// <returns>
+      /// The closes inevitable node from the given node.
+      /// </returns>
+      public static TNode ClosesInevitableNode<TEdge, TNode>(this ImmutableDirectedGraph<TNode, TEdge> graph, TNode nodeToCheck)
+      {
+         var allTraversals = graph.AllEdgeTraversals(nodeToCheck).ToList();
+
+         // take candidate nodes from first traversal, benefit: they are already ordered by distance
+         var candidateNodes = allTraversals.First().Select(edge => edge.Value);
+
+         // return the first candidate that is contained in all traversals
+         return candidateNodes.FirstOrDefault(candidateNode => allTraversals.All(traversal => traversal.Any(edge => edge.Value.Equals(candidateNode))));
+      }
+
+      /// <summary>
+      /// Calculates the closes inevitable node of a given node using some optimizations
+      /// </summary>
+      /// <typeparam name="TEdge">The type of the edge.</typeparam>
+      /// <typeparam name="TNode">The type of the node.</typeparam>
+      /// <param name="graph">The graph.</param>
+      /// <param name="nodeToCheck">The node to check.</param>
+      /// <returns>
+      /// The closes inevitable node from the given node.
+      /// </returns>
+      public static TNode ClosesInevitableNodeOptimized<TEdge, TNode>(this ImmutableDirectedGraph<TNode, TEdge> graph, TNode nodeToCheck)
+      {
+         var allTraversals = graph.AllEdgeTraversals(nodeToCheck).ToList();
+
+         // take candidate nodes from first traversal, benefit: they are already ordered by distance
+         // optimization: filter for nodes with <= 1 outgoing edges
+         // another optimzation would be to also filter for nodes with >= #edges(nodeToCheck) incoming edges,
+         // but unfortunately this is not easily supported by our graph structure
+         var candidateNodes = allTraversals.First().Select(edge => edge.Value).Where(node => graph.Edges(node).Count <= 1);
+
+         // return the first candidate that is contained in all traversals after the first one
+         return candidateNodes.FirstOrDefault(candidateNode => allTraversals.Skip(1).All(traversal => traversal.Any(edge => edge.Value.Equals(candidateNode))));
       }
 
       /// <summary>
